@@ -1,20 +1,20 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import requests
 from datetime import datetime
 
 app = Flask(__name__)
 
-def callApi():
+def callApi(minX, maxX, minY, maxY):
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
     api_key = ""
     params = {
         "apiKey": api_key,
         "type": "all",
         "drcType": "all",
-        "minX": "127.269182",
-        "maxX": "127.530568",
-        "minY": "36.192478 ",
-        "maxY": "36.497312",
+        "minX": minX,
+        "maxX": maxX,
+        "minY": minY,
+        "maxY": maxY,
         "getType": "json"
     }
     response = requests.get(api_url, params=params)
@@ -37,9 +37,15 @@ def convertData(data, start_id=1):
             current_id += 1
     return new_data
 
-@app.route('/')
+@app.route('/', methods=['POST'])
 def index():
-    data = callApi()
+    request_data = request.get_json()
+    minX = request_data.get('minX')
+    maxX = request_data.get('maxX')
+    minY = request_data.get('minY')
+    maxY = request_data.get('maxY')
+
+    data = callApi(minX, maxX, minY, maxY)
     if data:
         converted_data = convertData(data)
         return jsonify(converted_data)
