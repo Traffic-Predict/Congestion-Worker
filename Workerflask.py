@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 def callApi():
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
-    api_key = "3ce615607a57401392dac0fa4aa6330d"
+    api_key = ""
     params = {
         "apiKey": api_key,
         "type": "all",
