@@ -37,7 +37,7 @@ def convertData(data, start_id=1):
             current_id += 1
     return new_data
 
-@app.route('/', methods=['POST'])
+@app.route('/main', methods=['POST'])
 def index():
     request_data = request.get_json()
     minX = request_data.get('minX')
@@ -53,4 +53,4 @@ def index():
         return jsonify({"error": "API 요청 실패"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
