@@ -1,0 +1,3 @@
+.env
+venv
+transformes_data_*.json

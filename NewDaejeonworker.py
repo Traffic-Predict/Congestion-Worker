@@ -2,11 +2,12 @@ import requests
 import json
 import time
 from datetime import datetime
-
+import os
+from dotenv import load_dotenv
 
 def callApi():
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
-    api_key = ""
+    api_key = api_key = os.environ.get("ITS_API_KEY")
     params = {
         "apiKey": api_key,
         "type": "all",
