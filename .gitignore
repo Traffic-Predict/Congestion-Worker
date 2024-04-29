@@ -1,0 +1,4 @@
+.env
+venv
+transformes_data_*.json
+__pycache__

@@ -1,12 +1,15 @@
 from flask import Flask, jsonify, request
 import requests
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 app = Flask(__name__)
 
 def callApi(minX, maxX, minY, maxY):
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
-    api_key = ""
+    api_key = os.environ.get("API_KEY")
     params = {
         "apiKey": api_key,
         "type": "all",
