@@ -27,3 +27,7 @@ Run `NewDaejeonworker.py`.
 Run `Workerflask.py`
 
 `flask --app Workerflask.py run`
+
+When run on server with port number `60001`
+
+`flask --app Workerflask.py run --port=60001 --host=0.0.0.0`
