@@ -1,15 +1,20 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+
 app = Flask(__name__)
+
+load_dotenv()
+
+CORS(app, resources={r'*': {'origins': os.getenv("FE_ORIGIN")}})
 
 def callApi(minX, maxX, minY, maxY):
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
-    api_key = os.environ.get("API_KEY")
+    api_key = os.getenv("ITS_API_KEY")
     params = {
         "apiKey": api_key,
         "type": "all",
@@ -21,7 +26,12 @@ def callApi(minX, maxX, minY, maxY):
         "getType": "json"
     }
     response = requests.get(api_url, params=params)
-    return response.json() if response.status_code == 200 else None
+
+    if response.status_code == 200:
+        return response.json() 
+    else:
+        raise Exception(f"{response.status_code}")
+    
 
 def convertData(data, start_id=1):
     new_data = {"items": []}
