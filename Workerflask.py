@@ -1,18 +1,29 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import requests
 from datetime import datetime
 import sqlite3
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 
+# 환경 변수 설정 로드
+load_dotenv()
+
+# CORS 설정
+CORS(app, resources={r'*': {'origins': os.getenv("FE_ORIGIN")}})
+
+# 대전 지역 위경도 범위 정보
 '''
 대전 지역 대략적인 위경도 범위
        "minX": "127.269182",
         "maxX": "127.530568",
         "minY": "36.192478 ",
         "maxY": "36.497312",
-
 '''
+
+# 데이터베이스 연결 함수
 def get_db_connection():
     conn = sqlite3.connect('daejeon_links.sqlite')
     conn.row_factory = sqlite3.Row
@@ -20,7 +31,7 @@ def get_db_connection():
 
 def callApi(minX, maxX, minY, maxY):
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
-    api_key = ""
+    api_key = os.getenv("ITS_API_KEY")
     params = {
         "apiKey": api_key,
         "type": "all",
@@ -32,7 +43,10 @@ def callApi(minX, maxX, minY, maxY):
         "getType": "json"
     }
     response = requests.get(api_url, params=params)
-    return response.json() if response.status_code == 200 else None
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"{response.status_code}")
 
 def convertData(data, start_id=1):
     new_data = {"items": []}
@@ -43,7 +57,7 @@ def convertData(data, start_id=1):
             created_date = datetime.strptime(item["createdDate"], "%Y%m%d%H%M%S")
             iso_date = created_date.isoformat() + "+09:00"  # KST 기준으로 +09:00 추가
             link_id = int(item["linkId"])
-            db_query = conn.execute('SELECT link_id, road_name,road_rank,max_spd FROM daejeon_link WHERE link_id = ?', (link_id,))
+            db_query = conn.execute('SELECT link_id, road_name, road_rank, max_spd FROM daejeon_link WHERE link_id = ?', (link_id,))
             link_info = db_query.fetchone()
             converted_item = {
                 "id": current_id,
@@ -53,7 +67,7 @@ def convertData(data, start_id=1):
                 "link_Id": link_id,
                 "Node_Id": int(item["startNodeId"]),
                 "road_name": link_info["road_name"] if link_info else "Unknown",
-                "road_rank": link_info["road_rank"]if link_info else "Unknown",
+                "road_rank": link_info["road_rank"] if link_info else "Unknown",
                 "max_spd": link_info["max_spd"] if link_info else "Unknown"
             }
             new_data["items"].append(converted_item)
@@ -68,7 +82,6 @@ def index():
     maxX = request_data.get('maxX')
     minY = request_data.get('minY')
     maxY = request_data.get('maxY')
-
     data = callApi(minX, maxX, minY, maxY)
     if data:
         converted_data = convertData(data)
