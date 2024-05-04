@@ -4,6 +4,7 @@ import requests
 from dotenv import load_dotenv
 from ConvertJson import *
 import os
+from config import CITYROAD_DELTA
 
 app = Flask(__name__)
 
@@ -45,9 +46,11 @@ def index():
     maxX = request_data.get('maxX')
     minY = request_data.get('minY')
     maxY = request_data.get('maxY')
+    include_cityroad = float(maxX) - float(minX) <= CITYROAD_DELTA  # maxX와 minX의 차이를 기준으로 시내도로 포함 여부 결정
+
     data = callApi(minX, maxX, minY, maxY)
     if data:
-        converted_data = convertData(data)
+        converted_data = convertData(data, include_cityroad)
         return jsonify(converted_data)
     else:
         return jsonify({"error": "API 요청 실패"})
