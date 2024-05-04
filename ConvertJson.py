@@ -10,11 +10,11 @@ def determine_congestion(road_rank, speed):
     }
     if road_rank in congestion_levels:
         if speed <= congestion_levels[road_rank]['congested']:
-            return 'congested'
+            return 3
         elif speed <= congestion_levels[road_rank]['slow']:
-            return 'slow'
+            return 2
         else:
-            return 'smooth'
+            return 1
     return 'unknown'
 
 def get_db_connection():
