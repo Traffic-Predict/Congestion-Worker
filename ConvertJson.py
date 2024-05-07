@@ -31,17 +31,18 @@ def convertData(data, include_cityroad=True, start_id=1):
             created_date = datetime.strptime(item["createdDate"], "%Y%m%d%H%M%S")
             iso_date = created_date.isoformat() + "+09:00"  # KST 기준으로 +09:00 추가
             link_id = int(item["linkId"])
-            db_query = conn.execute('SELECT link_id, road_name, road_rank FROM daejeon_link WHERE link_id = ?',
+            db_query = conn.execute('SELECT GEOMETRY,link_id, road_name, road_rank FROM daejeon_link WHERE link_id = ?',
                                     (link_id,))
 
             link_info = db_query.fetchone()
-            if not link_info or link_info['road_rank'] in ('105', '106', '107'): # 지방도는 실시간 교통 예측서 제외
+            if not link_info or link_info['road_rank'] in ('105', '106', '107'):  # 지방도는 실시간 교통 예측서 제외
                 continue
-            if not include_cityroad and link_info['road_rank'] == '104': # 지도 범위에 따라 시내도로 제외
+            if not include_cityroad and link_info['road_rank'] == '104':  # 지도 범위에 따라 시내도로 제외
                 continue
             road_status = determine_congestion(link_info['road_rank'], float(item["speed"]))
             converted_item = {
                 "id": current_id,
+                "geometry": str(link_info["GEOMETRY"]),
                 "speed": float(item["speed"]),
                 "road_status":road_status,
                 "date": iso_date,
