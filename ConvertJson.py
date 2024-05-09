@@ -18,7 +18,7 @@ def determine_congestion(road_rank, speed):
     return 'unknown'
 
 def get_db_connection():
-    conn = sqlite3.connect('daejeon_links.sqlite')
+    conn = sqlite3.connect('daejeon_links_without_geometry.sqlite')
     conn.row_factory = sqlite3.Row
     return conn
 
