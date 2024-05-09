@@ -1,3 +1,3 @@
 """관련 상수 정의."""
 
-CITYROAD_DELTA = 0.1  # 시내 도로 포함 기준(maxX-minX)
+EXCLUDE_CITY_LEVEL = 9  # 시내 도로 포함 지도 레벨기준

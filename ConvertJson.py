@@ -1,5 +1,6 @@
 from datetime import datetime
 import sqlite3
+from config import EXCLUDE_CITY_LEVEL
 
 def determine_congestion(road_rank, speed):
     congestion_levels = {
@@ -22,7 +23,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def convertData(data, include_cityroad=True, start_id=1):
+def convertData(data, mapLevel, start_id=1):
     new_data = {"items": []}
     current_id = start_id
     conn = get_db_connection()
@@ -37,7 +38,7 @@ def convertData(data, include_cityroad=True, start_id=1):
             link_info = db_query.fetchone()
             if not link_info or link_info['road_rank'] in ('105', '106', '107'):  # 지방도는 실시간 교통 예측서 제외
                 continue
-            if not include_cityroad and link_info['road_rank'] == '104':  # 지도 범위에 따라 시내도로 제외
+            if mapLevel>=EXCLUDE_CITY_LEVEL and link_info['road_rank'] == '104':  # 지도 레벨에 따라 시내도로 제외
                 continue
             road_status = determine_congestion(link_info['road_rank'], float(item["speed"]))
             converted_item = {
