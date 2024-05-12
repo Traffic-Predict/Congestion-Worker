@@ -18,7 +18,7 @@ def determine_congestion(road_rank, speed):
     return 'unknown'
 
 def get_db_connection():
-    conn = sqlite3.connect('daejeon_links_without_geometry.sqlite')
+    conn = sqlite3.connect('daejeon_link_with_wgs84.sqlite')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -31,7 +31,7 @@ def convertData(data, include_cityroad=True, start_id=1):
             created_date = datetime.strptime(item["createdDate"], "%Y%m%d%H%M%S")
             iso_date = created_date.isoformat() + "+09:00"  # KST 기준으로 +09:00 추가
             link_id = int(item["linkId"])
-            db_query = conn.execute('SELECT GEOMETRY,link_id, road_name, road_rank FROM daejeon_link WHERE link_id = ?',
+            db_query = conn.execute('SELECT GEOMETRY,link_id, road_name, road_rank FROM daejeon_link_wgs84 WHERE link_id = ?',
                                     (link_id,))
 
             link_info = db_query.fetchone()
