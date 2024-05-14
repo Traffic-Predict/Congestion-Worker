@@ -1,24 +1,35 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
-from dotenv import load_dotenv
-from ConvertJson import *
+import json
+from datetime import datetime, timedelta
 import os
+from dotenv import load_dotenv
+from ConvertJson import convertData
 from config import CITYROAD_DELTA
+from threading import Timer
 
 app = Flask(__name__)
 
 load_dotenv()
-
 CORS(app, resources={r'*': {'origins': os.getenv("FE_ORIGIN")}})
 
-'''
-대전 지역 대략적인 위경도 범위
-       "minX": "127.269182",
-        "maxX": "127.530568",
-        "minY": "36.192478 ",
-        "maxY": "36.497312",
-'''
+# 캐시를 저장할 변수와 타임스탬프
+cache = None
+last_cached_time = datetime.min
+cache_interval = timedelta(minutes=5)
+
+def fetch_and_cache_data():
+    global cache, last_cached_time
+    minX = "127.269182"
+    maxX = "127.530568"
+    minY = "36.192478"
+    maxY = "36.497312"
+    data = callApi(minX, maxX, minY, maxY)
+    if data:
+        cache = convertData(data, True)  # 캐시 데이터는 항상 시내도로를 포함하도록 설정
+        last_cached_time = datetime.now()
+    Timer(300, fetch_and_cache_data).start()  # 5분마다 재실행
 
 def callApi(minX, maxX, minY, maxY):
     api_url = "https://openapi.its.go.kr:9443/trafficInfo"
@@ -37,23 +48,27 @@ def callApi(minX, maxX, minY, maxY):
     if response.status_code == 200:
         return response.json()
     else:
-        raise Exception(f"{response.status_code}")
+        raise Exception(f"API Error: {response.status_code}")
 
 @app.route('/main', methods=['POST'])
 def index():
-    request_data = request.get_json()
-    minX = request_data.get('minX')
-    maxX = request_data.get('maxX')
-    minY = request_data.get('minY')
-    maxY = request_data.get('maxY')
-    include_cityroad = float(maxX) - float(minX) <= CITYROAD_DELTA  # maxX와 minX의 차이를 기준으로 시내도로 포함 여부 결정
+    if datetime.now() - last_cached_time > cache_interval:
+        fetch_and_cache_data()
 
-    data = callApi(minX, maxX, minY, maxY)
-    if data:
-        converted_data = convertData(data, include_cityroad)
-        return jsonify(converted_data)
+    if cache:
+        request_data = request.get_json()
+        include_cityroad = float(request_data['maxX']) - float(request_data['minX']) <= CITYROAD_DELTA
+        # 필터링 로직 수정
+        filtered_data = {
+            'items': [item for item in cache['items'] if
+                      float(request_data['minX']) <= float(json.loads(item['geometry'])[0][0]) <= float(request_data['maxX']) and
+                      float(request_data['minY']) <= float(json.loads(item['geometry'])[0][1]) <= float(request_data['maxY']) and
+                      (include_cityroad or item['road_rank'] != '104')]
+        }
+        return jsonify(filtered_data)
     else:
         return jsonify({"error": "API 요청 실패"})
 
 if __name__ == '__main__':
+    fetch_and_cache_data()
     app.run(host='0.0.0.0', port=5000, debug=True)
