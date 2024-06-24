@@ -58,12 +58,15 @@ def index():
     if cache:
         request_data = request.get_json()
         include_cityroad = float(request_data['maxX']) - float(request_data['minX']) <= CITYROAD_DELTA
+        level = int(request_data.get('zoom', 0))  # MapLevel 값을 int로 변환하고, 기본값을 0으로 설정
         # 필터링 로직 수정
         filtered_data = {
             'items': [item for item in cache['items'] if
                       float(request_data['minX']) <= float(json.loads(item['geometry'])[0][0]) <= float(request_data['maxX']) and
                       float(request_data['minY']) <= float(json.loads(item['geometry'])[0][1]) <= float(request_data['maxY']) and
-                      (include_cityroad or item['road_rank'] != '104')]
+                     (include_cityroad or item['road_rank'] != '104' or (
+                      item['road_rank'] == '104' and level >= 8))]
+
         }
         return jsonify(filtered_data)
     else:
