@@ -62,15 +62,15 @@ def index():
 
     if cache:
         request_data = request.get_json()
-        include_cityroad = float(request_data['maxX']) - float(request_data['minX']) <= CITYROAD_DELTA
+        #include_cityroad = float(request_data['maxX']) - float(request_data['minX']) <= CITYROAD_DELTA
         level = int(request_data.get('zoom', 0))  # MapLevel 값을 int로 변환하고, 기본값을 0으로 설정
         # 필터링 로직 수정
         filtered_data = {
             'items': [item for item in cache['items'] if
                       float(request_data['minX']) <= float(json.loads(item['geometry'])[0][0]) <= float(request_data['maxX']) and
                       float(request_data['minY']) <= float(json.loads(item['geometry'])[0][1]) <= float(request_data['maxY']) and
-                     (include_cityroad or item['road_rank'] != '104' or (
-                      item['road_rank'] == '104' and level >= 8))]
+                      (level >=13 or item['road_rank']!='104')]
+                    #(include_cityroad or item['road_rank'] != '104')]
 
         }
         return jsonify(filtered_data)
@@ -109,7 +109,7 @@ def predict_area():
             return jsonify({"error": "Prediction data not cached"}), 404
 
         cache_data = prediction_cache[requested_time.isoformat()]
-        include_cityroad = float(request_data['maxX']) - float(request_data['minX']) <= CITYROAD_DELTA
+        #include_cityroad = float(request_data['maxX']) - float(request_data['minX']) <= CITYROAD_DELTA
         level = int(request_data.get('zoom', 0))  # MapLevel 값을 int로 변환하고, 기본값을 0으로 설정
 
         # 필터링 로직 수정
@@ -117,8 +117,7 @@ def predict_area():
             'items': [item for item in cache_data if
                       float(request_data['minX']) <= float(json.loads(item['geometry'])[0][0]) <= float(request_data['maxX']) and
                       float(request_data['minY']) <= float(json.loads(item['geometry'])[0][1]) <= float(request_data['maxY']) and
-                     (include_cityroad or item['road_rank'] != '104' or (
-                      item['road_rank'] == '104' and level >= 8))]
+                      (level >= 13 or item['road_rank'] != '104')]
         }
 
         return jsonify(filtered_data)
@@ -137,15 +136,17 @@ def cache_prediction_data(requested_time):
 
         for link_info in links:
             link_id = link_info['link_id']
-            csv_path = f'./predictCSV/{link_id}.csv'
+            csv_path = f'./predictCSV/{link_id}/{link_id}.csv'
+            print(csv_path)
 
             if os.path.exists(csv_path):
+
                 df = pd.read_csv(csv_path)
                 df['datetime'] = pd.to_datetime(df['datetime'])
                 matched_row = df[df['datetime'] == requested_time]
 
                 if not matched_row.empty:
-                    predicted_speed = matched_row['predicted_speed'].values[0]
+                    predicted_speed = matched_row['speed'].values[0]
                     item = {
                         "id": link_id,
                         "geometry": str(link_info["GEOMETRY"]),
